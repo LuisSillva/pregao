@@ -1,0 +1,146 @@
+/* O Dash carrega automaticamente todo .css que estiver em pregao/assets/ */
+
+:root {
+  --page: #0d0d0d;
+  --surface: #1a1a19;
+  --surface-2: #232321;
+  --ink: #f0efec;
+  --ink-2: #c3c2b7;
+  --muted: #898781;
+  --line: #2c2c2a;
+  --axis: #383835;
+  --accent: #3987e5;
+  --good: #0ca30c;
+  --critical: #e66767;
+  --radius: 10px;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--page);
+  color: var(--ink);
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+/* Os componentes do Dash 4 (dropdown, checklist...) leem estas variáveis.
+   Declaradas no body, elas vencem os valores padrão (claros) declarados na raiz. */
+body {
+  --Dash-Fill-Inverse-Strong: var(--surface);
+  --Dash-Fill-Interactive-Strong: var(--accent);
+  --Dash-Fill-Interactive-Weak: rgba(255, 255, 255, 0.04);
+  --Dash-Fill-Primary-Hover: rgba(255, 255, 255, 0.06);
+  --Dash-Fill-Primary-Active: rgba(255, 255, 255, 0.1);
+  --Dash-Fill-Disabled: rgba(255, 255, 255, 0.06);
+  --Dash-Stroke-Strong: var(--axis);
+  --Dash-Stroke-Weak: var(--line);
+  --Dash-Text-Strong: var(--ink);
+  --Dash-Text-Primary: var(--ink);
+  --Dash-Text-Weak: var(--ink-2);
+  --Dash-Text-Disabled: var(--muted);
+}
+
+.shell { min-height: 100vh; }
+
+.topbar {
+  display: flex;
+  align-items: center;
+  gap: 32px;
+  padding: 0 32px;
+  height: 56px;
+  border-bottom: 1px solid var(--line);
+  background: var(--page);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.brand { font-weight: 700; letter-spacing: 0.02em; font-size: 16px; }
+
+.nav { display: flex; gap: 4px; }
+
+.nav-link {
+  color: var(--muted);
+  text-decoration: none;
+  padding: 6px 12px;
+  border-radius: 6px;
+}
+.nav-link:hover { color: var(--ink); background: var(--surface); }
+
+.content { max-width: 1200px; margin: 0 auto; padding: 24px 32px 64px; }
+
+.page { display: flex; flex-direction: column; gap: 16px; }
+
+/* ---------- filtros ---------- */
+
+.filters { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+
+.ticker-select { width: 300px; }
+
+.segmented {
+  display: inline-flex;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 3px;
+}
+.segmented label {
+  display: inline-flex;
+  align-items: center;
+  padding: 5px 12px;
+  border-radius: 6px;
+  color: var(--muted);
+  cursor: pointer;
+  user-select: none;
+}
+.segmented input { display: none; }
+.segmented label:has(input:checked) { background: var(--surface-2); color: var(--ink); }
+.segmented label:hover { color: var(--ink); }
+
+/* ---------- cabeçalho do ativo ---------- */
+
+.headline {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 8px;
+}
+.headline h1 { margin: 0 0 2px; font-size: 22px; font-weight: 600; }
+.quote { display: flex; align-items: baseline; gap: 12px; }
+.price { font-size: 26px; font-weight: 600; }
+.delta { font-weight: 600; }
+.delta.up { color: var(--good); }
+.delta.down { color: var(--critical); }
+.muted { color: var(--muted); }
+
+/* ---------- números do período ---------- */
+
+.stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+@media (max-width: 800px) { .stats { grid-template-columns: repeat(2, 1fr); } }
+
+.stat {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+}
+.stat-label { color: var(--ink-2); font-size: 13px; }
+.stat-value { font-size: 22px; font-weight: 600; margin: 2px 0; }
+.stat-hint { color: var(--muted); font-size: 12px; }
+
+/* ---------- painéis de gráfico ---------- */
+
+.panel {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 12px 8px 4px;
+}
+.panel-title { font-size: 14px; font-weight: 600; margin: 4px 12px 0; }
+.panel-note { color: var(--muted); font-size: 12px; margin: 2px 12px 0; }
