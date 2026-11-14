@@ -75,7 +75,8 @@ def summary(prices: pd.Series) -> dict[str, float]:
 
     total = prices.iloc[-1] / prices.iloc[0] - 1
     years = (prices.index[-1] - prices.index[0]).days / 365.25
-    cagr = (1 + total) ** (1 / years) - 1 if years > 0 else np.nan
+    # Anualizar menos de um ano de dados extrapola demais (um mês bom vira "300% ao ano").
+    cagr = (1 + total) ** (1 / years) - 1 if years >= 0.99 else np.nan
     vol = log_returns(prices).std() * np.sqrt(TRADING_DAYS)
     return {
         "total_return": float(total),

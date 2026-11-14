@@ -75,3 +75,9 @@ def test_summary():
 
 def test_summary_poucos_dados():
     assert np.isnan(ind.summary(prices([100]))["total_return"])
+
+
+def test_summary_nao_anualiza_periodo_curto():
+    s = ind.summary(prices(np.linspace(100, 120, 60)))
+    assert np.isnan(s["cagr"])
+    assert s["total_return"] == pytest.approx(0.2)
