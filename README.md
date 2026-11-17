@@ -6,10 +6,12 @@ Painel para visualizar ações da B3 e dos EUA e testar modelos de previsão de 
 
 ![Tela de análise](docs/analise.png)
 
+![Tela de comparação](docs/comparacao.png)
+
 ## Telas
 
 - **Análise** (pronta): velas com médias móveis de 20, 50 e 200 dias, volume, RSI, drawdown e as estatísticas do período (retorno, retorno anualizado, volatilidade e pior queda). As velas e as médias usam preços ajustados por dividendos e desdobramentos.
-- **Comparação** (próxima)
+- **Comparação** (pronta): até 6 ativos lado a lado. Quanto R$ 100 teriam virado em cada um (escala log), risco × retorno de todos os ativos acompanhados, correlação entre retornos semanais e o beta de uma ação contra o índice do seu mercado.
 - **Previsão** (depois): modelos contra uma baseline ingênua, em backtest walk-forward.
 
 ## Como os dados chegam
@@ -46,8 +48,10 @@ pregao/
   store.py        leitura dos preços pelo app, com cache em memória
   indicators.py   retornos, médias móveis, RSI, volatilidade, drawdown
   analysis.py     prepara um ativo para a tela: ajuste, recorte, velas semanais/mensais
+  comparison.py   vários ativos: normalização, risco × retorno, correlação, beta
   theme.py        cores e estilo dos gráficos
   charts.py       figuras Plotly
+  ui.py           peças de interface usadas por mais de uma página
   app.py          app Dash e navegação
   pages/          uma tela por arquivo
   assets/         CSS (carregado automaticamente pelo Dash)
