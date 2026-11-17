@@ -144,3 +144,23 @@ body {
 }
 .panel-title { font-size: 14px; font-weight: 600; margin: 4px 12px 0; }
 .panel-note { color: var(--muted); font-size: 12px; margin: 2px 12px 0; }
+
+/* ---------- comparação ---------- */
+
+.ticker-multi { min-width: 420px; flex: 1; max-width: 720px; }
+
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+@media (max-width: 900px) { .grid-2 { grid-template-columns: 1fr; } }
+
+.panel-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.panel-head .panel-note { max-width: 560px; }
+
+.beta-controls { display: flex; align-items: center; gap: 16px; margin: 4px 12px 0; flex-wrap: wrap; }
+.beta-stats { display: flex; gap: 16px; color: var(--ink-2); }
+.beta-stats b { color: var(--ink); }
