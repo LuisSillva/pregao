@@ -8,6 +8,7 @@ import dash
 from dash import Input, Output, callback, dcc, html
 
 from pregao import analysis, charts, store, theme
+from pregao.ui import GRAPH_CONFIG, ticker_label
 from pregao.tickers import ASSETS, BY_TICKER
 
 dash.register_page(__name__, path="/", name="Análise", order=0)
@@ -15,13 +16,6 @@ dash.register_page(__name__, path="/", name="Análise", order=0)
 DEFAULT_TICKER = "PETR4.SA"
 # Cor fixa por janela: a cor segue a média, não a posição dela na lista.
 MA_COLORS = dict(zip(analysis.MA_WINDOWS, theme.SERIES))
-GRAPH_CONFIG = {"displaylogo": False, "modeBarButtonsToRemove": ["select2d", "lasso2d"]}
-
-
-def ticker_label(ticker: str) -> str:
-    asset = BY_TICKER[ticker]
-    code = ticker.removesuffix(".SA")
-    return f"{code} · {asset.name}"
 
 
 layout = html.Div(
