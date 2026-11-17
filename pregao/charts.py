@@ -6,6 +6,7 @@ nada de Dash: dá para testar e até usar num notebook.
 
 from __future__ import annotations
 
+import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
@@ -138,4 +139,123 @@ def drawdown_figure(dd: pd.Series) -> go.Figure:
     fig.update_layout(**theme.base_layout(showlegend=False, margin=dict(l=56, r=24, t=8, b=32)))
     theme.style_axes(fig)
     fig.update_yaxes(tickformat=".0%")
+    return fig
+
+
+# ---------------------------------------------------------------- Comparação
+
+
+def short(ticker: str) -> str:
+    return ticker.removesuffix(".SA")
+
+
+def dodge(positions: list[float], min_gap: float) -> list[float]:
+    """Afasta rótulos que ficariam um em cima do outro, mantendo a ordem vertical.
+
+    Ordena, empurra para cima cada rótulo que ficou perto demais do anterior e
+    depois recentra o grupo, para os rótulos não subirem todos.
+    """
+    order = sorted(range(len(positions)), key=lambda i: positions[i])
+    placed = [positions[i] for i in order]
+    for k in range(1, len(placed)):
+        placed[k] = max(placed[k], placed[k - 1] + min_gap)
+    shift = (sum(placed) - sum(positions[i] for i in order)) / len(placed)
+    out = [0.0] * len(positions)
+    for k, i in enumerate(order):
+        out[i] = placed[k] - shift
+    return out
+
+
+NICE_TICKS = [10, 20, 30, 50, 70, 100, 150, 200, 300, 500, 700, 1000, 1500, 2000, 3000, 5000]
+
+
+def normalized_figure(norm: pd.DataFrame, colors: dict[str, str], indexes: set[str]) -> go.Figure:
+    """Uma linha por ativo, todas começando em 100. Índices tracejados."""
+    fig = go.Figure()
+    for ticker in norm.columns:
+        s = norm[ticker].dropna()
+        fig.add_trace(go.Scatter(
+            x=s.index, y=s, name=short(ticker), mode="lines",
+            line=dict(color=colors[ticker], width=2, dash="dot" if ticker in indexes else "solid"),
+            hovertemplate="%{y:.0f}",
+        ))
+
+    # Rótulo direto no fim de cada linha. Em eixo log, o Plotly posiciona
+    # anotações em log10 do valor, então o cálculo todo é feito em log10.
+    log_lo, log_hi = np.log10(norm.min().min()), np.log10(norm.max().max())
+    ends = [np.log10(norm[t].dropna().iloc[-1]) for t in norm.columns]
+    for ticker, y in zip(norm.columns, dodge(ends, min_gap=0.05 * (log_hi - log_lo))):
+        fig.add_annotation(
+            x=norm[ticker].dropna().index[-1], y=y, text=short(ticker), showarrow=False,
+            xanchor="left", xshift=6, font=dict(size=11, color=theme.INK_2),
+        )
+    fig.add_hline(y=100, line=dict(color=theme.MUTED, width=1, dash="dot"))
+    fig.update_layout(**theme.base_layout(margin=dict(l=56, r=72, t=24, b=32)))
+    theme.style_axes(fig)
+    fig.update_xaxes(hoverformat="%d/%m/%Y")
+    ticks = [v for v in NICE_TICKS if 10**log_lo * 0.9 <= v <= 10**log_hi * 1.1]
+    fig.update_yaxes(type="log", tickvals=ticks, ticktext=[str(v) for v in ticks],
+                     title_text="R$ 100 investidos viraram", title_font=dict(size=11, color=theme.MUTED))
+    return fig
+
+
+def risk_return_figure(rr: pd.DataFrame, colors: dict[str, str]) -> go.Figure:
+    """Todos os ativos em cinza como contexto; os selecionados em cor e com nome."""
+    fig = go.Figure()
+    others = rr[~rr["ticker"].isin(colors)]
+    chosen = rr[rr["ticker"].isin(colors)]
+    fig.add_trace(go.Scatter(
+        x=others["volatility"], y=others["cagr"], mode="markers", name="outros ativos",
+        marker=dict(size=9, color=theme.AXIS, line=dict(width=0)),
+        text=others["ticker"].map(short), hovertemplate="%{text}<br>vol %{x:.0%} · retorno %{y:.1%}<extra></extra>",
+    ))
+    fig.add_trace(go.Scatter(
+        x=chosen["volatility"], y=chosen["cagr"], mode="markers+text", name="selecionados",
+        marker=dict(size=13, color=[colors[t] for t in chosen["ticker"]], line=dict(width=2, color=theme.SURFACE)),
+        text=chosen["ticker"].map(short), textposition="top center", textfont=dict(size=11, color=theme.INK_2),
+        hovertemplate="%{text}<br>vol %{x:.0%} · retorno %{y:.1%}<extra></extra>",
+    ))
+    fig.update_layout(**theme.base_layout(showlegend=False, hovermode="closest"))
+    theme.style_axes(fig)
+    fig.update_xaxes(tickformat=".0%", title_text="volatilidade anualizada (risco) →",
+                     title_font=dict(size=11, color=theme.MUTED))
+    fig.update_yaxes(tickformat=".0%", title_text="retorno ao ano →", title_font=dict(size=11, color=theme.MUTED),
+                     zeroline=True, zerolinecolor=theme.AXIS)
+    return fig
+
+
+def correlation_figure(corr: pd.DataFrame) -> go.Figure:
+    labels = [short(t) for t in corr.columns]
+    fig = go.Figure(go.Heatmap(
+        z=corr.values, x=labels, y=labels, zmin=-1, zmax=1, colorscale=theme.DIVERGING,
+        text=corr.round(2).values, texttemplate="%{text:.2f}", textfont=dict(color=theme.INK, size=12),
+        xgap=2, ygap=2,  # fresta da cor do fundo entre as células
+        hovertemplate="%{y} × %{x}: %{z:.2f}<extra></extra>",
+        colorbar=dict(thickness=10, outlinewidth=0, tickfont=dict(color=theme.MUTED), tickvals=[-1, 0, 1]),
+    ))
+    fig.update_layout(**theme.base_layout(showlegend=False, hovermode="closest", margin=dict(l=72, r=24, t=8, b=40)))
+    fig.update_xaxes(showgrid=False, tickfont=dict(color=theme.INK_2))
+    fig.update_yaxes(showgrid=False, tickfont=dict(color=theme.INK_2), autorange="reversed")
+    return fig
+
+
+def beta_figure(points: pd.DataFrame, beta: float, alpha: float, color: str, labels: tuple[str, str]) -> go.Figure:
+    """Cada ponto é um dia: retorno do índice (x) × retorno da ação (y), mais a reta ajustada."""
+    fig = go.Figure(go.Scatter(
+        x=points["index"], y=points["asset"], mode="markers", name="dias",
+        marker=dict(size=5, color=color, opacity=0.35, line=dict(width=0)),
+        customdata=points.index.strftime("%d/%m/%Y"),
+        hovertemplate="%{customdata}<br>" + labels[0] + " %{x:.2%} · " + labels[1] + " %{y:.2%}<extra></extra>",
+    ))
+    x = pd.Series([points["index"].min(), points["index"].max()])
+    fig.add_trace(go.Scatter(
+        x=x, y=alpha + beta * x, mode="lines", name="reta", line=dict(color=theme.INK, width=2),
+        hoverinfo="skip",
+    ))
+    fig.update_layout(**theme.base_layout(showlegend=False, hovermode="closest"))
+    theme.style_axes(fig)
+    fig.update_xaxes(tickformat=".0%", title_text=f"retorno diário do {labels[0]}",
+                     title_font=dict(size=11, color=theme.MUTED), zeroline=True, zerolinecolor=theme.AXIS)
+    fig.update_yaxes(tickformat=".0%", title_text=f"retorno diário de {labels[1]}",
+                     title_font=dict(size=11, color=theme.MUTED), zeroline=True, zerolinecolor=theme.AXIS)
     return fig

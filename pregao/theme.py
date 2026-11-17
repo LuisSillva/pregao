@@ -16,6 +16,13 @@ GRID = "#2c2c2a"
 AXIS = "#383835"
 
 SERIES = ["#3987e5", "#d95926", "#199e70"]  # azul, laranja, verde-água
+
+# Paleta categorical completa (tema escuro), na ordem validada: a ordem garante que
+# cores vizinhas continuem distinguíveis para daltônicos. Nunca reordenar nem gerar cores novas.
+CATEGORICAL = ["#3987e5", "#d95926", "#199e70", "#c98500", "#d55181", "#0ca30c", "#9085e9", "#e66767"]
+
+# Divergente para correlação: azul (-1) <-> cinza neutro (0) <-> vermelho (+1)
+DIVERGING = [[0.0, "#3987e5"], [0.5, "#383835"], [1.0, "#e66767"]]
 NEGATIVE = "#e66767"  # polo negativo (quedas, drawdown)
 GOOD = "#0ca30c"
 CRITICAL = "#d03b3b"
