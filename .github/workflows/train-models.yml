@@ -1,0 +1,33 @@
+name: Treinar modelos
+
+on:
+  schedule:
+    # Sábado, 11:23 UTC: com o fechamento de sexta, prevê a semana seguinte
+    - cron: "23 11 * * 6"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency: dados  # nunca roda junto com a atualização de preços
+
+jobs:
+  train:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements.txt
+      - run: python scripts/train_models.py
+      - name: Commit dos resultados
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898283+github-actions[bot]@users.noreply.github.com"
+          git add data/ml
+          git diff --cached --quiet || git commit -m "Atualiza previsões e backtest"
+          git pull --rebase
+          git push
