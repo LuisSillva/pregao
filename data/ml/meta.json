@@ -1,0 +1,27 @@
+{
+  "trained_at": "2026-11-18T18:58:21+00:00",
+  "horizon": 5,
+  "min_train": 756,
+  "retrain_every": 21,
+  "interval": [
+    0.1,
+    0.9
+  ],
+  "features": [
+    "ret_1",
+    "ret_5",
+    "ret_20",
+    "ret_60",
+    "vol_5",
+    "vol_20",
+    "vol_60",
+    "rsi_14",
+    "dist_sma_20",
+    "dist_sma_200",
+    "drawdown_252",
+    "volume_z",
+    "idx_ret_5",
+    "idx_ret_20",
+    "idx_vol_20"
+  ]
+}
