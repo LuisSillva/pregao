@@ -259,3 +259,106 @@ def beta_figure(points: pd.DataFrame, beta: float, alpha: float, color: str, lab
     fig.update_yaxes(tickformat=".0%", title_text=f"retorno diário de {labels[1]}",
                      title_font=dict(size=11, color=theme.MUTED), zeroline=True, zerolinecolor=theme.AXIS)
     return fig
+
+
+# ---------------------------------------------------------------- Previsão
+
+
+def _pct_axes(fig, x_title: str | None = None, y_title: str | None = None, zero: bool = True) -> None:
+    title_font = dict(size=11, color=theme.MUTED)
+    fig.update_xaxes(tickformat=".0%", title_text=x_title, title_font=title_font,
+                     zeroline=zero, zerolinecolor=theme.AXIS)
+    fig.update_yaxes(tickformat=".0%", title_text=y_title, title_font=title_font,
+                     zeroline=zero, zerolinecolor=theme.AXIS)
+
+
+def prediction_scatter(bt: pd.DataFrame, color: str, model: str, log: bool = False) -> go.Figure:
+    """Previsto (x) × realizado (y). Modelo perfeito = todos os pontos na diagonal.
+
+    Com `log=True` (volatilidade), os dois eixos ficam em escala log: algumas semanas
+    de pânico chegam a 300% e, em escala linear, espremeriam todo o resto num canto.
+    """
+    lo = float(min(bt["y_pred"].min(), bt["y_true"].min()))
+    hi = float(max(bt["y_pred"].max(), bt["y_true"].max()))
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(
+        x=[lo, hi], y=[lo, hi], mode="lines", name="previsão perfeita",
+        line=dict(color=theme.MUTED, width=1, dash="dot"), hoverinfo="skip",
+    ))
+    fig.add_trace(go.Scatter(
+        x=bt["y_pred"], y=bt["y_true"], mode="markers", name=model,
+        marker=dict(size=6, color=color, opacity=0.45, line=dict(width=0)),
+        customdata=bt["date"].dt.strftime("%d/%m/%Y"),
+        hovertemplate="semana de %{customdata}<br>previsto %{x:.1%} · realizado %{y:.1%}<extra></extra>",
+    ))
+    fig.update_layout(**theme.base_layout(showlegend=False, hovermode="closest"))
+    theme.style_axes(fig)
+    _pct_axes(fig, "previsto pelo modelo", "o que aconteceu", zero=not log)
+    if log:
+        ticks = [v for v in (0.05, 0.1, 0.2, 0.3, 0.5, 1, 2, 3) if lo * 0.8 <= v <= hi * 1.2]
+        fig.update_xaxes(type="log", tickvals=ticks)
+        fig.update_yaxes(type="log", tickvals=ticks)
+    return fig
+
+
+def edge_figure(edge: pd.DataFrame, colors: dict[str, str]) -> go.Figure:
+    """Vantagem acumulada sobre a baseline: sobe enquanto o modelo ganha, desce enquanto perde."""
+    fig = go.Figure()
+    for name in edge.columns:
+        fig.add_trace(go.Scatter(
+            x=edge.index, y=edge[name], name=name, mode="lines",
+            line=dict(color=colors[name], width=2), hovertemplate="%{y:+.2f}",
+        ))
+    lo, hi = float(edge.min().min()), float(edge.max().max())
+    ends = [float(edge[c].iloc[-1]) for c in edge.columns]
+    for name, y in zip(edge.columns, dodge(ends, min_gap=0.06 * (hi - lo or 1))):
+        fig.add_annotation(x=edge.index[-1], y=y, text=name, showarrow=False, xanchor="left",
+                           xshift=6, font=dict(size=11, color=theme.INK_2))
+    fig.add_hline(y=0, line=dict(color=theme.MUTED, width=1, dash="dot"))
+    fig.update_layout(**theme.base_layout(margin=dict(l=56, r=120, t=24, b=32)))
+    theme.style_axes(fig)
+    fig.update_xaxes(hoverformat="%d/%m/%Y", range=[edge.index[0], edge.index[-1]])
+    fig.update_yaxes(title_text="vantagem acumulada", title_font=dict(size=11, color=theme.MUTED))
+    return fig
+
+
+def importance_figure(importance: pd.Series, color: str) -> go.Figure:
+    """Barras horizontais: quanto o LightGBM usou cada feature."""
+    imp = importance.sort_values()
+    fig = go.Figure(go.Bar(
+        x=imp.values, y=imp.index, orientation="h",
+        marker=dict(color=color, line=dict(width=0)),
+        hovertemplate="%{y}: %{x:.0%}<extra></extra>",
+    ))
+    fig.update_layout(**theme.base_layout(showlegend=False, hovermode="closest", bargap=0.35,
+                                          margin=dict(l=8, r=24, t=8, b=32)))
+    theme.style_axes(fig)
+    fig.update_xaxes(tickformat=".0%", gridcolor=theme.GRID, showgrid=True)
+    fig.update_yaxes(showgrid=False, automargin=True, tickfont=dict(color=theme.INK_2))
+    return fig
+
+
+def overview_figure(ov: pd.DataFrame, colors: dict[str, str]) -> go.Figure:
+    """Um ponto por (ação, modelo). Preenchido = diferença significativa; vazado = pode ser sorte."""
+    order = ov.groupby("ticker")["skill"].max().sort_values().index
+    labels = [short(t) for t in order]
+    fig = go.Figure()
+    for name, color in colors.items():
+        d = ov[ov["model"] == name].set_index("ticker").loc[order]
+        fig.add_trace(go.Scatter(
+            x=d["skill"], y=labels, mode="markers", name=name,
+            marker=dict(
+                size=11, color=[color if s else theme.SURFACE for s in d["significant"]],
+                line=dict(color=color, width=2), symbol="circle",
+            ),
+            customdata=d["p_value"],
+            hovertemplate="%{y} · " + name + "<br>skill %{x:+.1%} · p = %{customdata:.3f}<extra></extra>",
+        ))
+    fig.add_vline(x=0, line=dict(color=theme.MUTED, width=1, dash="dot"))
+    fig.update_layout(**theme.base_layout(hovermode="closest", margin=dict(l=8, r=24, t=24, b=40)))
+    theme.style_axes(fig)
+    fig.update_xaxes(tickformat="+.0%", showgrid=True, gridcolor=theme.GRID,
+                     title_text="← pior que a baseline · melhor que a baseline →",
+                     title_font=dict(size=11, color=theme.MUTED))
+    fig.update_yaxes(showgrid=False, automargin=True, tickfont=dict(color=theme.INK_2))
+    return fig
