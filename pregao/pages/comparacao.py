@@ -20,7 +20,7 @@ def panel(title: str, note: str, graph_id: str, height: int, extra=None) -> html
     return html.Section(
         className="panel",
         children=[
-            html.Div([html.Div(header), extra] if extra else header, className="panel-head"),
+            html.Div([html.Div(header), extra] if extra is not None else header, className="panel-head"),
             dcc.Graph(id=graph_id, config=GRAPH_CONFIG, style={"height": f"{height}px"}),
         ],
     )
