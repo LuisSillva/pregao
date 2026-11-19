@@ -8,11 +8,13 @@ Painel para visualizar ações da B3 e dos EUA e testar modelos de previsão de 
 
 ![Tela de comparação](docs/comparacao.png)
 
+![Tela de previsão](docs/previsao.png)
+
 ## Telas
 
 - **Análise** (pronta): velas com médias móveis de 20, 50 e 200 dias, volume, RSI, drawdown e as estatísticas do período (retorno, retorno anualizado, volatilidade e pior queda). As velas e as médias usam preços ajustados por dividendos e desdobramentos.
 - **Comparação** (pronta): até 6 ativos lado a lado. Quanto R$ 100 teriam virado em cada um (escala log), risco × retorno de todos os ativos acompanhados, correlação entre retornos semanais e o beta de uma ação contra o índice do seu mercado.
-- **Previsão** (próxima): a tela que mostra os resultados do motor de ML descrito abaixo.
+- **Previsão** (pronta): a previsão de cada modelo para os próximos 5 pregões, com intervalo de 80%; a tabela do backtest com erro, skill, acerto de direção e p-valor; previsto × realizado; a vantagem acumulada de cada modelo sobre a baseline ao longo do tempo; as features que o LightGBM mais usa; e o resumo das 17 ações.
 
 ## Previsão: o que foi testado e o que deu
 
@@ -34,6 +36,8 @@ As features usam só informação disponível no fechamento do dia: retornos e v
 
 - **Retorno:** nenhum modelo supera "prever zero". O LightGBM é significativamente *pior* nas 17 ações (skill de −5% a −14%): ele encontra padrões no ruído do treino que não se repetem. O acerto de direção fica perto de 50%, abaixo de simplesmente apostar que a ação sobe.
 - **Volatilidade:** o LightGBM erra menos que a baseline nas 17 ações (skill de +2% a +16%), com diferença significativa em 5 delas. A regressão linear ganha em 14 e também é significativa em 5. A volatilidade tem memória (períodos agitados vêm em sequência), e é isso que os modelos capturam; mas a baseline "último mês" já captura boa parte dessa memória, então o ganho é modesto.
+
+O gráfico de vantagem acumulada mostra uma nuance que a média esconde: boa parte do ganho na volatilidade veio de um único período, a pandemia (2020-2021), quando a volatilidade mudou de patamar muito rápido e a baseline "último mês" ficou para trás. Fora desses choques, a vantagem é pequena.
 
 Prever a direção do preço é praticamente impossível com dados públicos de preço; prever o *risco* é possível, com ganho real mas pequeno. Os números são recalculados toda semana.
 
@@ -78,6 +82,7 @@ pregao/
   indicators.py   retornos, médias móveis, RSI, volatilidade, drawdown
   analysis.py     prepara um ativo para a tela: ajuste, recorte, velas semanais/mensais
   comparison.py   vários ativos: normalização, risco × retorno, correlação, beta
+  forecast.py     resume os resultados do ML para a tela de previsão
   theme.py        cores e estilo dos gráficos
   charts.py       figuras Plotly
   ui.py           peças de interface usadas por mais de uma página
