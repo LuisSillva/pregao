@@ -25,3 +25,18 @@ def prices() -> pd.DataFrame:
 
 def history(ticker: str) -> pd.DataFrame:
     return data.series(prices(), ticker)
+
+
+_ml_cache: dict = {"mtime": None, "data": None}
+
+
+def ml() -> dict | None:
+    """Resultados do motor de ML (data/ml/), recarregados quando o robô publica novos."""
+    from pregao.ml import train  # import tardio: o app só precisa do ML na tela de Previsão
+
+    marker = train.ML_DIR / "metrics.parquet"
+    mtime = marker.stat().st_mtime if marker.exists() else None
+    if _ml_cache["data"] is None or mtime != _ml_cache["mtime"]:
+        _ml_cache["data"] = train.load()
+        _ml_cache["mtime"] = mtime
+    return _ml_cache["data"]
